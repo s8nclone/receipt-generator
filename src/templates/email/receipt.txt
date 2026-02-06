@@ -1,0 +1,32 @@
+{{storeName}}
+Your Receipt is Ready
+
+Hi {{customerName}},
+
+Thank you for your purchase! Your payment has been processed successfully.
+Please find your receipt attached to this email.
+
+RECEIPT DETAILS
+===============
+Receipt Number: {{receiptNumber}}
+Order Number: {{orderNumber}}
+Date: {{formattedDate}}
+Status: PAID
+
+ITEMS
+=====
+{{itemsText}}
+
+TOTAL PAID: {{formattedAmount}}
+
+You can also download your receipt anytime from your account dashboard:
+{{dashboardUrl}}
+
+If you have any questions about this receipt or your order,
+please don't hesitate to contact us.
+
+{{storeName}}
+{{storeAddress}}
+{{storeEmail}} | {{storePhone}}
+
+© {{year}} {{storeName}}. All rights reserved.

@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Receipt - {{receiptNumber}}</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                line-height: 1.6;
+                color: #333;
+                background-color: #f5f7fa;
+            }
+            
+            .container {
+                max-width: 600px;
+                margin: 0 auto;
+                background-color: #ffffff;
+            }
+            
+            .header {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                padding: 40px 30px;
+                text-align: center;
+            }
+            
+            .header h1 {
+                color: #ffffff;
+                font-size: 28px;
+                margin-bottom: 10px;
+                font-weight: 700;
+            }
+            
+            .header p {
+                color: #e0e7ff;
+                font-size: 16px;
+                margin: 0;
+            }
+            
+            .content {
+                padding: 30px;
+            }
+            
+            .greeting {
+                font-size: 18px;
+                color: #1e293b;
+                margin-bottom: 20px;
+                font-weight: 600;
+            }
+            
+            .message {
+                color: #64748b;
+                margin-bottom: 30px;
+                line-height: 1.8;
+            }
+            
+            .receipt-box {
+                background-color: #f8fafc;
+                border: 2px solid #e2e8f0;
+                border-radius: 12px;
+                padding: 25px;
+                margin-bottom: 30px;
+            }
+            
+            .receipt-header {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 20px;
+                padding-bottom: 20px;
+                border-bottom: 2px solid #e2e8f0;
+            }
+            
+            .receipt-info-item {
+                margin-bottom: 10px;
+            }
+            
+            .label {
+            color: #64748b;
+                font-size: 13px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                margin-bottom: 4px;
+                font-weight: 600;
+            }
+            
+            .value {
+                color: #1e293b;
+                font-size: 16px;
+                font-weight: 600;
+            }
+            
+            .items-table {
+                width: 100%;
+                margin-top: 20px;
+                border-collapse: collapse;
+            }
+            
+            .items-table th {
+                text-align: left;
+                color: #64748b;
+                font-size: 13px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                padding-bottom: 12px;
+                border-bottom: 2px solid #e2e8f0;
+                font-weight: 600;
+            }
+            
+            .items-table td {
+                padding: 12px 0;
+                border-bottom: 1px solid #f1f5f9;
+            }
+            
+            .item-name {
+                color: #1e293b;
+                font-weight: 500;
+                font-size: 15px;
+            }
+            
+            .item-quantity {
+                color: #64748b;
+                text-align: center;
+                font-size: 14px;
+            }
+            
+            .item-price {
+                color: #1e293b;
+                font-weight: 600;
+                text-align: right;
+                font-size: 15px;
+            }
+            
+            .total-section {
+                margin-top: 20px;
+                padding-top: 20px;
+                border-top: 2px solid #e2e8f0;
+                text-align: right;
+            }
+            
+            .total-label {
+                font-size: 18px;
+                color: #64748b;
+                margin-right: 20px;
+                font-weight: 600;
+            }
+            
+            .total-amount {
+                font-size: 28px;
+                color: #667eea;
+                font-weight: 700;
+            }
+            
+            .status-badge {
+                display: inline-block;
+                background-color: #dcfce7;
+                color: #166534;
+                padding: 8px 16px;
+                border-radius: 20px;
+                font-size: 14px;
+                font-weight: 600;
+                margin-top: 10px;
+            }
+            
+            .cta-button {
+                display: inline-block;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: #ffffff;
+                text-decoration: none;
+                padding: 14px 32px;
+                border-radius: 8px;
+                font-weight: 600;
+                font-size: 16px;
+                margin: 20px 0;
+                transition: opacity 0.2s;
+            }
+            
+            .cta-button:hover {
+                opacity: 0.9;
+            }
+            
+            .info-box {
+                background-color: #eff6ff;
+                border-left: 4px solid #3b82f6;
+                padding: 16px;
+                border-radius: 8px;
+                margin: 20px 0;
+            }
+            
+            .info-box p {
+                color: #1e40af;
+                margin: 0;
+                line-height: 1.6;
+            }
+            
+            .footer {
+                background-color: #f8fafc;
+                padding: 30px;
+                text-align: center;
+                border-top: 2px solid #e2e8f0;
+            }
+            
+            .footer p {
+                color: #64748b;
+                font-size: 14px;
+                margin-bottom: 10px;
+            }
+            
+            .footer a {
+                color: #667eea;
+                text-decoration: none;
+            }
+            
+            .footer a:hover {
+                text-decoration: underline;
+            }
+            
+            .social-links {
+                margin-top: 20px;
+            }
+            
+            .social-links a {
+                display: inline-block;
+                margin: 0 8px;
+                color: #94a3b8;
+                text-decoration: none;
+                font-size: 14px;
+            }
+            
+            @media only screen and (max-width: 600px) {
+                .container {
+                    width: 100% !important;
+                }
+                
+                .content {
+                    padding: 20px !important;
+                }
+                
+                .receipt-header {
+                    flex-direction: column;
+                }
+            
+                .total-amount {
+                    font-size: 24px;
+                }
+                
+                .header h1 {
+                    font-size: 24px;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <!-- Header -->
+            <div class="header">
+                <h1>{{storeName}}</h1>
+                <p>Your Receipt is Ready</p>
+            </div>
+            
+            <!-- Content -->
+            <div class="content">
+                <div class="greeting">
+                    Hi {{customerName}},
+                </div>
+                
+                <p class="message">
+                    Thank you for your purchase! Your payment has been processed successfully.
+                    Please find your receipt attached to this email.
+                </p>
+            
+                <!-- Receipt Box -->
+                <div class="receipt-box">
+                    <div class="receipt-header">
+                        <div>
+                            <div class="receipt-info-item">
+                                <div class="label">Receipt Number</div>
+                                <div class="value">{{receiptNumber}}</div>
+                            </div>
+                            <div class="receipt-info-item">
+                                <div class="label">Order Number</div>
+                                <div class="value">{{orderNumber}}</div>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div class="receipt-info-item">
+                                <div class="label">Date</div>
+                                <div class="value">{{formattedDate}}</div>
+                            </div>
+                            <div class="status-badge">✓ PAID</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Items -->
+                    <table class="items-table">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th style="text-align: center;">Qty</th>
+                                <th style="text-align: right;">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{itemsHTML}}
+                        </tbody>
+                    </table>
+                    
+                    <!-- Total -->
+                    <div class="total-section">
+                        <span class="total-label">Total Paid:</span>
+                        <span class="total-amount">{{formattedAmount}}</span>
+                    </div>
+                </div>
+            
+                <!-- Info Box -->
+                <div class="info-box">
+                    <p>
+                        <strong>Attached:</strong> Full receipt in PDF format<br>
+                        You can also download your receipt anytime from your account dashboard.
+                    </p>
+                </div>
+                
+                <!-- CTA -->
+                <div style="text-align: center;">
+                    <a href="{{dashboardUrl}}" class="cta-button">
+                        View All Receipts
+                    </a>
+                </div>
+            
+                <p class="message" style="margin-top: 30px;">
+                    If you have any questions about this receipt or your order,
+                    please don't hesitate to contact us.
+                </p>
+            </div>
+            
+            <!-- Footer -->
+            <div class="footer">
+                <p>
+                    <strong>{{storeName}}</strong><br>
+                    {{storeAddress}}<br>
+                    {{storeEmail}} | {{storePhone}}
+                </p>
+                
+                <div class="social-links">
+                    <a href="{{twitterUrl}}">Twitter</a> •
+                    <a href="{{facebookUrl}}">Facebook</a> •
+                    <a href="{{instagramUrl}}">Instagram</a>
+                </div>
+                
+                <p style="margin-top: 20px; font-size: 12px; color: #94a3b8;">
+                    You're receiving this email because you made a purchase at {{storeName}}.<br>
+                    © {{year}} {{storeName}}. All rights reserved.
+                </p>
+            </div>
+        </div>
+    </body>
+</html>
