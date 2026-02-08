@@ -34,7 +34,7 @@ export class WebhookController {
 			return res.status(500).json({
 				success: false,
 				error: "Webhook processing failed",
-			});  
+			});
 		}
 	}
 
@@ -42,61 +42,88 @@ export class WebhookController {
 	 * Mock webhook endpoint for testing
 	 * POST /api/v1/webhooks/payment/mock
 	 */
+	// async mockWebhook(req: Request, res: Response) {
+	// 	try {
+	// 		const {
+	// 			orderId,
+	// 			amount,
+	// 			shouldFail = false,
+	// 			delaySeconds = 0,
+	// 		} = req.body;
+	// 		// Simulate delay
+	// 		if (delaySeconds > 0) {
+	// 			await new Promise((resolve) =>
+	// 				setTimeout(resolve, delaySeconds * 1000),
+	// 			);
+	// 		}
+
+	// 		// Generate mock payload
+	// 		const transactionId = `txn_mock_${Date.now()}`;
+	// 		const webhookId = `whk_mock_${Date.now()}`;
+
+	// 		const mockPayload = {
+	// 			transaction_id: transactionId,
+	// 			order_id: orderId,
+	// 			status: shouldFail ? "failed" : "succeeded",
+	// 			amount: amount,
+	// 			currency: "NGN",
+	// 			timestamp: new Date().toISOString(),
+	// 		};
+
+	// 		// Generate mock signature
+	// 		const crypto = require("crypto");
+	// 		const signature = crypto
+	// 			.createHmac("sha256", "mock_secret_for_testing")
+	// 			.update(JSON.stringify(mockPayload))
+	// 			.digest("hex");
+
+	// 		// Process through webhook service
+	// 		const result = await webhookService.processPaymentWebhook(
+	// 			"mock",
+	// 			webhookId,
+	// 			mockPayload,
+	// 			signature,
+	// 		);
+
+	// 		return res.json({
+	// 			success: true,
+	// 			message: "Mock webhook processed",
+	// 			data: result,
+	// 		});
+	// 	} catch (error: any) {
+	// 		console.error("Mock webhook error:", error);
+	// 		return res.status(500).json({
+	// 			success: false,
+	// 			error: error.message,
+	// 		});
+	// 	}
+	// }
 	async mockWebhook(req: Request, res: Response) {
-		try {
-			const {
-				orderId,
-				amount,
-				shouldFail = false,
-				delaySeconds = 0,
-			} = req.body;
-			// Simulate delay
-			if (delaySeconds > 0) {
-				await new Promise((resolve) =>
-					setTimeout(resolve, delaySeconds * 1000),
-				);
-			}
+		const { orderId, amount, shouldFail = false, delaySeconds = 0 } = req.body;
 
-			// Generate mock payload
-			const transactionId = `txn_mock_${Date.now()}`;
-			const webhookId = `whk_mock_${Date.now()}`;
-
-			const mockPayload = {
-				transaction_id: transactionId,
-				order_id: orderId,
-				status: shouldFail ? "failed" : "succeeded",
-				amount: amount,
-				currency: "NGN",
-				timestamp: new Date().toISOString(),
-			};
-
-			// Generate mock signature
-			const crypto = require("crypto");
-			const signature = crypto
-				.createHmac("sha256", "mock_secret_for_testing")
-				.update(JSON.stringify(mockPayload))
-				.digest("hex");
-
-			// Process through webhook service
-			const result = await webhookService.processPaymentWebhook(
-				"mock",
-				webhookId,
-				mockPayload,
-				signature,
-			);
-
-			return res.json({
-				success: true,
-				message: "Mock webhook processed",
-				data: result,
-			});
-		} catch (error: any) {
-			console.error("Mock webhook error:", error);
-			return res.status(500).json({
-				success: false,
-				error: error.message,
-			});
+		if (delaySeconds > 0) {
+			await new Promise((r) => setTimeout(r, delaySeconds * 1000));
 		}
+
+		const payload = {
+			transaction_id: `txn_mock_${Date.now()}`,
+			order_id: orderId,
+			status: shouldFail ? "failed" : "succeeded",
+			amount,
+			currency: "NGN",
+			timestamp: new Date().toISOString(),
+		};
+
+		const result = await webhookService.processPaymentWebhook(
+			"mock",
+			`whk_mock_${Date.now()}`,
+			payload,
+		);
+
+		return res.json({
+			success: true,
+			data: result,
+		});
 	}
 }
 

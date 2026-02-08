@@ -1,0 +1,132 @@
+services:
+  # PostgreSQL Database
+  - type: pserv
+    name: receipt-db
+    runtime: node
+    plan: free
+    region: oregon
+    ipAllowList: []
+
+  # Redis
+  - type: redis
+    name: receipt-redis
+    plan: free
+    region: oregon
+    ipAllowList: []
+
+  # Web Service (API)
+  - type: web
+    name: receipt-api
+    runtime: node
+    region: oregon
+    plan: free
+    buildCommand: npm install && npm run build && npm run prisma:migrate
+    startCommand: npm run start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: receipt-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: receipt-redis
+          type: redis
+          property: connectionString
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: EMAIL_HOST
+        value: smtp.gmail.com
+      - key: EMAIL_PORT
+        value: 587
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASSWORD
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+
+  # Background Worker
+  - type: worker
+    name: receipt-worker
+    runtime: node
+    region: oregon
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run start:worker
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: receipt-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: receipt-redis
+          type: redis
+          property: connectionString
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: EMAIL_HOST
+        value: smtp.gmail.com
+      - key: EMAIL_PORT
+        value: 587
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASSWORD
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+
+  # Cron Job for Recovery Scans (runs every 6 hours)
+  - type: cron
+    name: receipt-recovery
+    runtime: node
+    region: oregon
+    plan: free
+    schedule: "0 */6 * * *"
+    buildCommand: npm install && npm run build
+    startCommand: node dist/scripts/recovery-scan.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: receipt-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: receipt-redis
+          type: redis
+          property: connectionString
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: EMAIL_HOST
+        value: smtp.gmail.com
+      - key: EMAIL_PORT
+        value: 587
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASSWORD
+        sync: false
+      - key: EMAIL_FROM
+        sync: false

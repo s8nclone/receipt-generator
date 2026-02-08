@@ -10,6 +10,45 @@ export class ReceiptService {
 		private logger: any,
 	) {}
 
+	// Find singlw receipt
+	async findById(receiptId: string) {
+        const receipt = await prisma.receipt.findUnique({
+            where: { id: receiptId },
+            include: {
+                order: true,
+                user: {
+                    select: {
+                        id: true,
+                        email: true,
+                        firstName: true,
+                        lastName: true,
+                    },
+                },
+                store: {
+                    select: {
+                        id: true,
+                        name: true,
+                        logoUrl: true,
+                        contactEmail: true,
+                    },
+                },
+            },
+        });
+
+        if (!receipt) {
+            throw new Error(`Receipt not found: ${receiptId}`);
+        }
+
+        return receipt;
+    }
+
+    // // Find receipt by transaction ID
+    // async findByTransactionId(transactionId: string) {
+    //     return await prisma.receipt.findUnique({
+    //         where: { transactionId },
+    //     });
+    // }
+
 	// Find receipt by transaction ID (idempotency check)
 	async findByTransactionId(transactionId: string) {
 		return await prisma.receipt.findUnique({

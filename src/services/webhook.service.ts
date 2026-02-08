@@ -17,10 +17,9 @@ interface WebhookPayload {
 interface ServiceResult {
 	success: boolean;
 	type: string;
-	message: string;
+	message?: string;
 	data?: any;
 }
-
 
 export class WebhookService {
 	constructor(
@@ -34,20 +33,29 @@ export class WebhookService {
 	// Validate webhook signature
 	validateSignature(
 		provider: string,
-		payload: any,
-		signature: string,
+		payload: Buffer | any,
+		signature?: string,
 	): boolean {
+		// Allow mock provider to pass
+		if (provider === "mock") {
+			return true;
+		}
+
+		// No signature? Fail fast, no crypto
+		if (!signature) {
+			return false;
+		}
+
 		const secret = this.getWebhookSecret(provider);
 
 		const expectedSignature = crypto
 			.createHmac("sha256", secret)
-			.update(JSON.stringify(payload))
+			.update(Buffer.isBuffer(payload) ? payload : JSON.stringify(payload))
 			.digest("hex");
 
-		// Timing-safe comparison
 		return crypto.timingSafeEqual(
-			Buffer.from(signature),
-			Buffer.from(expectedSignature),
+			Buffer.from(signature, "hex"),
+			Buffer.from(expectedSignature, "hex"),
 		);
 	}
 
@@ -73,7 +81,6 @@ export class WebhookService {
 
 	// Parse webhook payload
 	parsePayload(provider: string, payload: any): WebhookPayload {
-		
 		if (provider === "paystack") {
 			return {
 				transaction_id: payload.data.object.id,
@@ -101,7 +108,7 @@ export class WebhookService {
 		provider: string;
 		eventType?: string;
 		payload: any;
-		signature: string;
+		signature?: string;
 		signatureValid: boolean;
 		parsedData?: WebhookPayload;
 		processed?: boolean;
@@ -159,14 +166,133 @@ export class WebhookService {
 	}
 
 	// Main webhook processing entry point
+	// async processPaymentWebhook(
+	// 	provider: string,
+	// 	webhookId: string,
+	// 	rawPayload: string,
+	// 	signature: string,
+	// ): Promise<ServiceResult> {
+	// 	// Validate signature using RAW payload
+	// 	const signatureValid = this.validateSignature(
+	// 		provider,
+	// 		rawPayload,
+	// 		signature,
+	// 	);
+
+	// 	if (!signatureValid) {
+	// 		await this.logWebhook({
+	// 			webhookId,
+	// 			provider,
+	// 			payload: rawPayload,
+	// 			signature,
+	// 			signatureValid: false,
+	// 			outcome: "VALIDATION_FAILED",
+	// 		});
+
+	// 		return {
+	// 			success: false,
+	// 			type: "invalid_signature",
+	// 			message: "Webhook signature validation failed",
+	// 		};
+	// 	}
+
+	// 	// Parse AFTER validation
+	// 	const parsedData = this.parsePayload(provider, JSON.parse(rawPayload));
+
+	// 	const { order_id, transaction_id, status, amount, currency } = parsedData;
+
+	// 	// Check for duplicate
+	// 	const isDuplicate = await this.checkDuplicate(webhookId);
+	// 	if (isDuplicate) {
+	// 		this.logger.info("Duplicate webhook detected", { webhookId });
+	// 		return {
+	// 			success: true,
+	// 			type: "duplicate",
+	// 			message: "Webhook already processed",
+	// 			data: { webhookId },
+	// 		};
+	// 	}
+
+	// 	// Log webhook
+	// 	const webhookLog = await this.logWebhook({
+	// 		webhookId,
+	// 		provider,
+	// 		eventType: `payment.${status}`,
+	// 		payload: parsedData,
+	// 		signature,
+	// 		signatureValid: true,
+	// 		parsedData,
+	// 		processed: false,
+	// 	});
+
+	// 	// Process webhook
+	// 	try {
+	// 		if (status === "succeeded") {
+	// 			const result = await this.handlePaymentSuccess({
+	// 				orderId: order_id,
+	// 				transactionId: transaction_id,
+	// 				amount,
+	// 				currency,
+	// 				webhookLogId: webhookLog.id,
+	// 			});
+
+	// 			await this.markWebhookProcessed(webhookLog.id, "success");
+	// 			return result;
+	// 		}
+
+	// 		if (status === "failed") {
+	// 			const result = await this.handlePaymentFailure({
+	// 				orderId: order_id,
+	// 				transactionId: transaction_id,
+	// 				webhookLogId: webhookLog.id,
+	// 			});
+
+	// 			await this.markWebhookProcessed(webhookLog.id, "success");
+	// 			return result;
+	// 		}
+
+	// 		await this.markWebhookProcessed(webhookLog.id, "unknown_status");
+	// 		return {
+	// 			success: true,
+	// 			type: "ignored",
+	// 			message: `Webhook with status '${status}' was logged but not processed`,
+	// 		};
+	// 	} catch (error: any) {
+	// 		this.logger.error("Webhook processing failed", {
+	// 			error,
+	// 			webhookId,
+	// 			orderId: order_id,
+	// 		});
+
+	// 		await this.markWebhookFailed(webhookLog.id, error.message);
+	// 		throw error;
+	// 	}
+	// }
 	async processPaymentWebhook(
 		provider: string,
 		webhookId: string,
 		payload: any,
-		signature: string,
+		signature?: string,
 	): Promise<ServiceResult> {
-		// Validate signature
-		const signatureValid = this.validateSignature(provider, payload, signature);
+		if (provider === "mock") {
+			return this.processParsedWebhook({
+				webhookId,
+				provider,
+				parsedData: payload,
+				signatureValid: true,
+			});
+		}
+
+		if (!signature) {
+			throw new Error("No webhook signature");
+		}
+
+		const signatureValid = this.validateSignature(
+			provider,
+			payload,
+			signature!,
+		);
+
 		if (!signatureValid) {
 			await this.logWebhook({
 				webhookId,
@@ -184,152 +310,366 @@ export class WebhookService {
 			};
 		}
 
-		// Check for duplicate
-		const isDuplicate = await this.checkDuplicate(webhookId);
-		if (isDuplicate) {
-			this.logger.info("Duplicate webhook detected", { webhookId });
-			return {
-				success: true,
-				type: "duplicate",
-				message: "Webhook already processed",
-				data: { webhookId },
-			};
-		}
+		const parsedData = this.parsePayload(provider, JSON.parse(payload));
 
-		// Parse payload
-		const parsedData = this.parsePayload(provider, payload);
-		const { order_id, transaction_id, status, amount, currency } = parsedData;
-
-		// Log webhook
-		const webhookLog = await this.logWebhook({
+		return this.processParsedWebhook({
 			webhookId,
 			provider,
-			eventType: `payment.${status}`,
-			payload,
+			parsedData,
 			signature,
 			signatureValid: true,
-			parsedData,
-			processed: false,
 		});
-
-		// Handle based on status
-		try {
-			if (status === "succeeded") {
-				const result = await this.handlePaymentSuccess({
-					orderId: order_id,
-					transactionId: transaction_id,
-					amount,
-					currency,
-					webhookLogId: webhookLog.id,
-				});
-
-				await this.markWebhookProcessed(webhookLog.id, "success");
-				return result;
-			} else if (status === "failed") {
-				const result = await this.handlePaymentFailure({
-					orderId: order_id,
-					transactionId: transaction_id,
-					webhookLogId: webhookLog.id,
-				});
-
-				await this.markWebhookProcessed(webhookLog.id, "success");
-				return result;
-			}
-
-			await this.markWebhookProcessed(webhookLog.id, "unknown_status");
-			return {
-				success: true,
-				type: "ignored",
-				message: `Webhook with status '${status}' was logged but not processed`,
-			};
-		} catch (error: any) {
-			this.logger.error("Webhook processing failed", {
-				error,
-				webhookId,
-				orderId: order_id,
-			});
-
-			await this.markWebhookFailed(webhookLog.id, error.message);
-			throw error;
-		}
 	}
+
+	// private async processParsedWebhook({
+	// 	webhookId,
+	// 	provider,
+	// 	parsedData,
+	// 	signature,
+	// 	signatureValid,
+	// }: {
+	// 	webhookId: string;
+	// 	provider: string;
+	// 	parsedData: any;
+	// 	signature?: string;
+	// 	signatureValid: boolean;
+	// }): Promise<ServiceResult> {
+	// 	const { order_id, transaction_id, status, amount, currency } = parsedData;
+
+	// 	const isDuplicate = await this.checkDuplicate(webhookId);
+	// 	if (isDuplicate) {
+	// 		return {
+	// 			success: true,
+	// 			type: "duplicate",
+	// 			message: "Webhook already processed",
+	// 			data: { webhookId },
+	// 		};
+	// 	}
+
+	// 	const webhookLog = await this.logWebhook({
+	// 		webhookId,
+	// 		provider,
+	// 		eventType: `payment.${status}`,
+	// 		payload: parsedData,
+	// 		signature,
+	// 		signatureValid,
+	// 		parsedData,
+	// 		processed: false,
+	// 	});
+
+	// 	if (provider === "mock") {
+	// 		await this.markWebhookProcessed(webhookLog.id, "success");
+
+	// 		return {
+	// 			success: true,
+	// 			type: "mock",
+	// 			message: `Mock payment ${status}`,
+	// 			data: parsedData,
+	// 		};
+	// 	}
+
+	// 	if (status === "succeeded") {
+	// 		const result = await this.handlePaymentSuccess({
+	// 			orderId: order_id,
+	// 			transactionId: transaction_id,
+	// 			amount,
+	// 			currency,
+	// 			webhookLogId: webhookLog.id,
+	// 		});
+
+	// 		await this.markWebhookProcessed(webhookLog.id, "success");
+	// 		return result;
+	// 	}
+
+	// 	if (status === "failed") {
+	// 		const result = await this.handlePaymentFailure({
+	// 			orderId: order_id,
+	// 			transactionId: transaction_id,
+	// 			webhookLogId: webhookLog.id,
+	// 		});
+
+	// 		await this.markWebhookProcessed(webhookLog.id, "success");
+	// 		return result;
+	// 	}
+
+	// 	await this.markWebhookProcessed(webhookLog.id, "validation_failed");
+
+	// 	return {
+	// 		success: true,
+	// 		type: "ignored",
+	// 		message: `Webhook with status '${status}' was logged but not processed`,
+	// 	};
+	// }
+	private async processParsedWebhook({
+    webhookId,
+    provider,
+    parsedData,
+    signature,
+    signatureValid,
+}: {
+    webhookId: string;
+    provider: string;
+    parsedData: any;
+    signature?: string;
+    signatureValid: boolean;
+}): Promise<ServiceResult> {
+    const { order_id, transaction_id, status, amount, currency } = parsedData;
+
+    const isDuplicate = await this.checkDuplicate(webhookId);
+    if (isDuplicate) {
+        return {
+            success: true,
+            type: "duplicate",
+            message: "Webhook already processed",
+            data: { webhookId },
+        };
+    }
+
+    const webhookLog = await this.logWebhook({
+        webhookId,
+        provider,
+        eventType: `payment.${status}`,
+        payload: parsedData,
+        signature,
+        signatureValid,
+        parsedData,
+        processed: false,
+    });
+
+    // ✅ REMOVE THIS BLOCK - let mock webhooks process normally
+    // if (provider === "mock") {
+    //     await this.markWebhookProcessed(webhookLog.id, "success");
+    //     return {
+    //         success: true,
+    //         type: "mock",
+    //         message: `Mock payment ${status}`,
+    //         data: parsedData,
+    //     };
+    // }
+
+    // Process success/failure for ALL providers (including mock)
+    if (status === "succeeded") {
+        const result = await this.handlePaymentSuccess({
+            orderId: order_id,
+            transactionId: transaction_id,
+            amount,
+            currency,
+            webhookLogId: webhookLog.id,
+        });
+
+        await this.markWebhookProcessed(webhookLog.id, "success");
+        return result;
+    }
+
+    if (status === "failed") {
+        const result = await this.handlePaymentFailure({
+            orderId: order_id,
+            transactionId: transaction_id,
+            webhookLogId: webhookLog.id,
+        });
+
+        await this.markWebhookProcessed(webhookLog.id, "success");
+        return result;
+    }
+
+    await this.markWebhookProcessed(webhookLog.id, "validation_failed");
+
+    return {
+        success: true,
+        type: "ignored",
+        message: `Webhook with status '${status}' was logged but not processed`,
+    };
+}
 
 	// Handle successful payment
+	// async handlePaymentSuccess(params: {
+	// 	orderId: string;
+	// 	transactionId: string;
+	// 	amount: number;
+	// 	currency: string;
+	// 	webhookLogId: string;
+	// }): Promise<ServiceResult> {
+	// 	const { orderId, transactionId, amount, currency, webhookLogId } = params;
+
+	// 	// Validate order
+	// 	const orderValidation = await this.orderService.validateForPayment(
+	// 		orderId,
+	// 		amount,
+	// 	);
+
+	// 	if (!orderValidation) {
+	// 		throw new Error("new error")
+	// 	}
+
+	// 	if (!orderValidation.valid) {
+	// 		this.logger.warn("Order validation failed", {
+	// 			orderId,
+	// 			reason: orderValidation.reason,
+	// 		});
+
+	// 		return {
+	// 			success: true,
+	// 			type: "validation_failed",
+	// 			message: orderValidation.reason,
+	// 			data: { orderId },
+	// 		};
+	// 	}
+
+	// 	// Check if transaction already processed
+	// 	const existingReceipt =
+	// 		await this.receiptService.findByTransactionId(transactionId);
+	// 	if (existingReceipt) {
+	// 		this.logger.info("Receipt already exists for transaction", {
+	// 			transactionId,
+	// 			receiptId: existingReceipt.id,
+	// 		});
+
+	// 		return {
+	// 			success: true,
+	// 			type: "already_processed",
+	// 			message: "Receipt already generated for this transaction",
+	// 			data: { receiptId: existingReceipt.id },
+	// 		};
+	// 	}
+
+	// 	// Process payment (atomic transaction)
+	// 	const paymentResult = await this.paymentService.recordSuccessfulPayment({
+	// 		orderId,
+	// 		transactionId,
+	// 		amount,
+	// 		currency,
+	// 		webhookLogId,
+	// 	});
+
+	// 	// Enqueue receipt generation
+	// 	const queueResult = await this.queueManager.enqueueReceiptGeneration({
+	// 		orderId,
+	// 		transactionId,
+	// 		userId: paymentResult.userId,
+	// 		receiptId: paymentResult.receiptId,
+	// 	});
+
+	// 	return {
+	// 		success: true,
+	// 		type: "processed",
+	// 		message: "Payment processed and receipt generation queued",
+	// 		data: {
+	// 			orderId,
+	// 			transactionId,
+	// 			receiptId: paymentResult.receiptId,
+	// 			jobId: queueResult.id,
+	// 		},
+	// 	};
+	// }
 	async handlePaymentSuccess(params: {
-		orderId: string;
-		transactionId: string;
-		amount: number;
-		currency: string;
-		webhookLogId: string;
-	}): Promise<ServiceResult> {
-		const { orderId, transactionId, amount, currency, webhookLogId } = params;
+    orderId: string;
+    transactionId: string;
+    amount: number;
+    currency: string;
+    webhookLogId: string;
+}): Promise<ServiceResult> {
+    const { orderId, transactionId, amount, currency, webhookLogId } = params;
 
-		// Validate order
-		const orderValidation = await this.orderService.validateForPayment(
-			orderId,
-			amount,
-		);
+    // Validate order
+    const orderValidation = await this.orderService.validateForPayment(
+        orderId,
+        amount,
+    );
 
-		if (!orderValidation.valid) {
-			this.logger.warn("Order validation failed", {
-				orderId,
-				reason: orderValidation.reason,
-			});
+    if (!orderValidation) {
+        throw new Error("Order validation failed");
+    }
 
-			return {
-				success: true,
-				type: "validation_failed",
-				message: orderValidation.reason,
-				data: { orderId },
-			};
-		}
+    if (!orderValidation.valid) {
+        this.logger.warn("Order validation failed", {
+            orderId,
+            reason: orderValidation.reason,
+        });
 
-		// Check if transaction already processed
-		const existingReceipt =
-			await this.receiptService.findByTransactionId(transactionId);
-		if (existingReceipt) {
-			this.logger.info("Receipt already exists for transaction", {
-				transactionId,
-				receiptId: existingReceipt.id,
-			});
+        return {
+            success: true,
+            type: "validation_failed",
+            message: orderValidation.reason,
+            data: { orderId },
+        };
+    }
 
-			return {
-				success: true,
-				type: "already_processed",
-				message: "Receipt already generated for this transaction",
-				data: { receiptId: existingReceipt.id },
-			};
-		}
+    // Check if transaction already processed
+    const existingReceipt =
+        await this.receiptService.findByTransactionId(transactionId);
+    if (existingReceipt) {
+        this.logger.info("Receipt already exists for transaction", {
+            transactionId,
+            receiptId: existingReceipt.id,
+        });
 
-		// Process payment (atomic transaction)
-		const paymentResult = await this.paymentService.recordSuccessfulPayment({
-			orderId,
-			transactionId,
-			amount,
-			currency,
-			webhookLogId,
-		});
+        return {
+            success: true,
+            type: "already_processed",
+            message: "Receipt already generated for this transaction",
+            data: { receiptId: existingReceipt.id },
+        };
+    }
 
-		// Enqueue receipt generation
-		const queueResult = await this.queueManager.enqueueReceiptGeneration({
-			orderId,
-			transactionId,
-			userId: paymentResult.userId,
-			receiptId: paymentResult.receiptId,
-		});
+    // Process payment (atomic transaction)
+    const paymentResult = await this.paymentService.recordSuccessfulPayment({
+        orderId,
+        transactionId,
+        amount,
+        currency,
+        webhookLogId,
+    });
 
-		return {
-			success: true,
-			type: "processed",
-			message: "Payment processed and receipt generation queued",
-			data: {
-				orderId,
-				transactionId,
-				receiptId: paymentResult.receiptId,
-				jobId: queueResult.jobId,
-			},
-		};
-	}
+    // Queue all three jobs and capture their IDs
+    const pdfJob = await this.queueManager.enqueueReceiptGeneration({
+        orderId,
+        transactionId,
+        userId: paymentResult.userId,
+        receiptId: paymentResult.receiptId,
+    });
+
+    const uploadJob = await this.queueManager.enqueueCloudinaryUpload({
+        receiptId: paymentResult.receiptId,
+        orderId,
+    });
+
+    const emailJob = await this.queueManager.enqueueEmailDelivery({
+        receiptId: paymentResult.receiptId,
+        userId: paymentResult.userId,
+    });
+
+    // Get order and receipt details for response
+    const order = await this.orderService.findById(orderId);
+    const receipt = await this.receiptService.findById(paymentResult.receiptId);
+
+    return {
+        success: true,
+        type: "processed",
+        message: "Payment processed and receipt generation queued",
+        data: {
+            // Order info
+            orderId,
+            orderNumber: order.orderNumber,
+            
+            // Transaction info
+            transactionId,
+            
+            // Receipt info
+            receiptId: paymentResult.receiptId,
+            receiptNumber: receipt.receiptNumber,
+            
+            // Payment status
+            status: "PAID",
+            
+            // Queue job IDs
+            queuedJobs: {
+                pdfGeneration: pdfJob.id,
+                cloudinaryUpload: uploadJob.id,
+                emailDelivery: emailJob.id,
+            },
+        },
+    };
+}
 
 	// Handle failed payment
 	async handlePaymentFailure(params: {

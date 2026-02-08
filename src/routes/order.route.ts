@@ -15,6 +15,7 @@ router.post(
 	orderController.createOrder.bind(orderController),
 );
 router.get("/", orderController.getUserOrders.bind(orderController));
+router.get("/stores", orderController.getAllStores.bind(orderController));
 router.get("/:id", orderController.getOrder.bind(orderController));
 router.post("/:id/cancel", orderController.cancelOrder.bind(orderController));
 

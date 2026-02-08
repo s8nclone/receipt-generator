@@ -8,16 +8,19 @@ export interface ReceiptGenerationJobData {
 	transactionId: string;
 	userId: string;
 	isRecovery?: boolean;
+	[key: string]: any;
 }
 
 export interface CloudinaryUploadJobData {
 	receiptId: string;
 	isRecovery?: boolean;
+	[key: string]: any;
 }
 
 export interface EmailDeliveryJobData {
 	receiptId: string;
 	isRecovery?: boolean;
+	[key: string]: any;
 }
 
 // Queue names (centralized)
@@ -111,67 +114,111 @@ export class QueueManager {
 	}
 
     // Enqueue receipt generation job
-	async enqueueReceiptGeneration(
-		data: ReceiptGenerationJobData,
-		options?: JobOptions,
-	): Promise<Job<ReceiptGenerationJobData>> {
-		const queue = this.queues.get(QUEUE_NAMES.RECEIPT_GENERATION);
+	// async enqueueReceiptGeneration(
+	// 	data: ReceiptGenerationJobData,
+	// 	options?: JobOptions,
+	// ): Promise<Job<ReceiptGenerationJobData>> {
+	// 	const queue = this.queues.get(QUEUE_NAMES.RECEIPT_GENERATION);
 
-		if (!queue) {
-			throw new Error("Receipt generation queue not initialized");
-		}
+	// 	if (!queue) {
+	// 		throw new Error("Receipt generation queue not initialized");
+	// 	}
 
-		const job = await queue.add(data, {
-			priority: data.isRecovery ? 2 : 1, // recovery jobs lower priority
-			jobId: `receipt-gen-${data.receiptId}`, // prevent duplicates
-			...options,
-		});
+	// 	const job = await queue.add(data, {
+	// 		priority: data.isRecovery ? 2 : 1, // recovery jobs lower priority
+	// 		jobId: `receipt-gen-${data.receiptId}`, // prevent duplicates
+	// 		...options,
+	// 	});
 
-		console.log(`Receipt generation job enqueued: ${job.id}`);
-		return job;
-	}
+	// 	console.log(`Receipt generation job enqueued: ${job.id}`);
+	// 	return job;
+	// }
 
-    // Enqueue Cloudinary upload job
-	async enqueueCloudinaryUpload(
-		data: CloudinaryUploadJobData,
-		options?: JobOptions,
-	): Promise<Job<CloudinaryUploadJobData>> {
-		const queue = this.queues.get(QUEUE_NAMES.CLOUDINARY_UPLOAD);
+    // // Enqueue Cloudinary upload job
+	// async enqueueCloudinaryUpload(
+	// 	data: CloudinaryUploadJobData,
+	// 	options?: JobOptions,
+	// ): Promise<Job<CloudinaryUploadJobData>> {
+	// 	const queue = this.queues.get(QUEUE_NAMES.CLOUDINARY_UPLOAD);
 
-		if (!queue) {
-			throw new Error("Cloudinary upload queue not initialized");
-		}
+	// 	if (!queue) {
+	// 		throw new Error("Cloudinary upload queue not initialized");
+	// 	}
 
-		const job = await queue.add(data, {
-			priority: data.isRecovery ? 2 : 1,
-			jobId: `cloudinary-${data.receiptId}`,
-			...options,
-		});
+	// 	const job = await queue.add(data, {
+	// 		priority: data.isRecovery ? 2 : 1,
+	// 		jobId: `cloudinary-${data.receiptId}`,
+	// 		...options,
+	// 	});
 
-		console.log(`Cloudinary upload job enqueued: ${job.id}`);
-		return job;
-	}
+	// 	console.log(`Cloudinary upload job enqueued: ${job.id}`);
+	// 	return job;
+	// }
 
-    // Enqueue email delivery job
-	async enqueueEmailDelivery(
-		data: EmailDeliveryJobData,
-		options?: JobOptions,
-	): Promise<Job<EmailDeliveryJobData>> {
-		const queue = this.queues.get(QUEUE_NAMES.EMAIL_DELIVERY);
+    // // Enqueue email delivery job
+	// async enqueueEmailDelivery(
+	// 	data: EmailDeliveryJobData,
+	// 	options?: JobOptions,
+	// ): Promise<Job<EmailDeliveryJobData>> {
+	// 	const queue = this.queues.get(QUEUE_NAMES.EMAIL_DELIVERY);
 
-		if (!queue) {
-			throw new Error("Email delivery queue not initialized");
-		}
+	// 	if (!queue) {
+	// 		throw new Error("Email delivery queue not initialized");
+	// 	}
 
-		const job = await queue.add(data, {
-			priority: data.isRecovery ? 2 : 1,
-			jobId: `email-${data.receiptId}`,
-			...options,
-		});
+	// 	const job = await queue.add(data, {
+	// 		priority: data.isRecovery ? 2 : 1,
+	// 		jobId: `email-${data.receiptId}`,
+	// 		...options,
+	// 	});
 
-		console.log(`Email delivery job enqueued: ${job.id}`);
-		return job;
-	}
+	// 	console.log(`Email delivery job enqueued: ${job.id}`);
+	// 	return job;
+	// }
+	async enqueueReceiptGeneration(data: any) {
+        const queue = this.getQueue(QUEUE_NAMES.RECEIPT_GENERATION);
+        if (!queue) throw new Error('Receipt generation queue not found');
+        
+        const job = await queue.add(data, {
+            attempts: 3,
+            backoff: {
+                type: 'exponential',
+                delay: 2000,
+            },
+        });
+        
+        return job;
+    }
+
+    async enqueueCloudinaryUpload(data: any) {
+        const queue = this.getQueue(QUEUE_NAMES.CLOUDINARY_UPLOAD);
+        if (!queue) throw new Error('Cloudinary upload queue not found');
+        
+        const job = await queue.add(data, {
+            attempts: 3,
+            backoff: {
+                type: 'exponential',
+                delay: 2000,
+            },
+        });
+        
+        return job;
+    }
+
+    async enqueueEmailDelivery(data: any) {
+        const queue = this.getQueue(QUEUE_NAMES.EMAIL_DELIVERY);
+        if (!queue) throw new Error('Email delivery queue not found');
+        
+        const job = await queue.add(data, {
+            attempts: 3,
+            backoff: {
+                type: 'exponential',
+                delay: 2000,
+            },
+        });
+        
+        return job;
+    }
 
     // Schedule recovery scan job (cron)
 	async scheduleRecoveryScan(cronExpression = "*/15 * * * *") {

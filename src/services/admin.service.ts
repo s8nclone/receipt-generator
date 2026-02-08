@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/prisma.js";
 import { ReceiptStatus } from "@/generated/enums.js";
-import { Receipt, Store } from "@/generated/client.js";
 
 export class AdminService {
 	constructor(private logger: any) {}
@@ -344,7 +343,7 @@ export class AdminService {
 
 		if (receipts.length === 0) return 0;
 
-		const totalTime = receipts.reduce((sum: string, receipt: Receipt) => {
+		const totalTime = receipts.reduce((sum: number, receipt: any) => {
 			if (!receipt.emailSentAt) return sum;
 			const diff = receipt.emailSentAt.getTime() - receipt.createdAt.getTime();
 			return sum + diff;
@@ -462,7 +461,7 @@ export class AdminService {
 			select: { id: true },
 		});
 
-		const storeIds = stores.map((s: Store) => s.id);
+		const storeIds = stores.map((s: any) => s.id);
 
 		if (storeIds.length === 0) {
 			return null;
@@ -592,7 +591,7 @@ export class AdminService {
 			"Email Sent",
 		];
 
-		const rows = receipts.map((receipt: Receipt) => {
+		const rows = receipts.map((receipt: any) => {
 			const orderSnapshot = receipt.orderSnapshot as any;
 			return [
 				receipt.receiptNumber,
@@ -658,7 +657,7 @@ export class AdminService {
 
 		return {
 			found: failedReceipts.length,
-			receiptIds: failedReceipts.map((r: Receipt) => r.id),
+			receiptIds: failedReceipts.map((r: any) => r.id),
 			message: `Found ${failedReceipts.length} receipts eligible for retry. Use manual recovery endpoint to retry them.`,
 		};
 	}

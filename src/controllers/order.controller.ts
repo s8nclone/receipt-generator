@@ -224,6 +224,30 @@ export class OrderController {
 			});
 		}
 	}
+
+	/**
+	 * Get all stores
+	 * GET /api/v1/orders/stores
+	 */
+	async getAllStores(req: Request, res: Response) {
+		try {
+			const stores = await prisma.store.findMany();
+
+			return res.status(200).json({
+				success: true,
+				data: stores
+			});
+
+		} catch (error) {
+			console.error("Get all stores error:", error);
+
+			return res.status(500).json({
+				success: false,
+				error: "Failed to fetch stores"
+			});
+		}
+	}
+
 }
 
 export const orderController = new OrderController();

@@ -4,8 +4,8 @@ import {
 	EmailDeliveryJobData,
 	QUEUE_NAMES,
 } from "../queue-manager.js";
-import { prisma } from "../../lib/prisma.js";
-import { receiptService, emailService } from "../../services/index.js"
+import { prisma } from "@/lib/prisma.js";
+import { receiptService, emailService } from "@/services/index.js"
 
 // Email Delivery Worker
 export const processEmailDelivery = async (

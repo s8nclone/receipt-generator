@@ -4,6 +4,36 @@ import { OrderStatus } from "@/generated/enums.js";
 export class OrderService {
 	constructor(private logger: any) {}
 
+	// Find single order
+	async findById(orderId: string) {
+        const order = await prisma.order.findUnique({
+            where: { id: orderId },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        email: true,
+                        firstName: true,
+                        lastName: true,
+                    },
+                },
+                store: {
+                    select: {
+                        id: true,
+                        name: true,
+                        logoUrl: true,
+                    },
+                },
+            },
+        });
+
+        if (!order) {
+            throw new Error(`Order not found: ${orderId}`);
+        }
+
+        return order;
+    }
+
 	//	Validate order is ready for payment
 	async validateForPayment(orderId: string, webhookAmount: number) {
 		const order = await prisma.order.findUnique({
