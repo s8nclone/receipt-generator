@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "dev:worker": "tsx watch src/worker.ts",
+    "prebuild": "npm install --include=dev @types/node",
     "build": "tsc",
     "start": "node dist/server.js",
     "start:worker": "node dist/worker.js",
@@ -23,6 +24,7 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.3.0",
     "@prisma/client": "^7.3.0",
+    "@types/node": "^20.19.33",
     "bcrypt": "^6.0.0",
     "bull": "^4.16.5",
     "cloudinary": "^2.9.0",
@@ -46,7 +48,6 @@
     "@types/express": "^4.17.21",
     "@types/ioredis": "^4.28.10",
     "@types/jsonwebtoken": "^9.0.5",
-    "@types/node": "^20.19.33",
     "@types/nodemailer": "^6.4.14",
     "@types/pdfkit": "^0.17.4",
     "@types/pg": "^8.16.0",
