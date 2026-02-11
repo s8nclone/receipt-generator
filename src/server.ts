@@ -1,3 +1,6 @@
+/// <reference lib="es2022" />
+/// <reference types="node" />
+
 import app from "./app.js";
 import { disconnectPrisma } from "./lib/prisma.js";
 import dotenv from "dotenv";
