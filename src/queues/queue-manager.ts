@@ -39,7 +39,7 @@ export class QueueManager {
 		this.initializeQueues();
 	}
 
-    // Initialize all queues
+	// Initialize all queues
 	private initializeQueues() {
 		// Receipt Generation Queue
 		this.queues.set(
@@ -108,12 +108,12 @@ export class QueueManager {
 		console.log("All queues initialized");
 	}
 
-    // Get queue by name
+	// Get queue by name
 	getQueue(name: string): Queue | undefined {
 		return this.queues.get(name);
 	}
 
-    // Enqueue receipt generation job
+	// Enqueue receipt generation job
 	// async enqueueReceiptGeneration(
 	// 	data: ReceiptGenerationJobData,
 	// 	options?: JobOptions,
@@ -134,7 +134,7 @@ export class QueueManager {
 	// 	return job;
 	// }
 
-    // // Enqueue Cloudinary upload job
+	// // Enqueue Cloudinary upload job
 	// async enqueueCloudinaryUpload(
 	// 	data: CloudinaryUploadJobData,
 	// 	options?: JobOptions,
@@ -155,7 +155,7 @@ export class QueueManager {
 	// 	return job;
 	// }
 
-    // // Enqueue email delivery job
+	// // Enqueue email delivery job
 	// async enqueueEmailDelivery(
 	// 	data: EmailDeliveryJobData,
 	// 	options?: JobOptions,
@@ -176,51 +176,51 @@ export class QueueManager {
 	// 	return job;
 	// }
 	async enqueueReceiptGeneration(data: any) {
-        const queue = this.getQueue(QUEUE_NAMES.RECEIPT_GENERATION);
-        if (!queue) throw new Error('Receipt generation queue not found');
-        
-        const job = await queue.add(data, {
-            attempts: 3,
-            backoff: {
-                type: 'exponential',
-                delay: 2000,
-            },
-        });
-        
-        return job;
-    }
+		const queue = this.getQueue(QUEUE_NAMES.RECEIPT_GENERATION);
+		if (!queue) throw new Error("Receipt generation queue not found");
 
-    async enqueueCloudinaryUpload(data: any) {
-        const queue = this.getQueue(QUEUE_NAMES.CLOUDINARY_UPLOAD);
-        if (!queue) throw new Error('Cloudinary upload queue not found');
-        
-        const job = await queue.add(data, {
-            attempts: 3,
-            backoff: {
-                type: 'exponential',
-                delay: 2000,
-            },
-        });
-        
-        return job;
-    }
+		const job = await queue.add(data, {
+			attempts: 3,
+			backoff: {
+				type: "exponential",
+				delay: 2000,
+			},
+		});
 
-    async enqueueEmailDelivery(data: any) {
-        const queue = this.getQueue(QUEUE_NAMES.EMAIL_DELIVERY);
-        if (!queue) throw new Error('Email delivery queue not found');
-        
-        const job = await queue.add(data, {
-            attempts: 3,
-            backoff: {
-                type: 'exponential',
-                delay: 2000,
-            },
-        });
-        
-        return job;
-    }
+		return job;
+	}
 
-    // Schedule recovery scan job (cron)
+	async enqueueCloudinaryUpload(data: any) {
+		const queue = this.getQueue(QUEUE_NAMES.CLOUDINARY_UPLOAD);
+		if (!queue) throw new Error("Cloudinary upload queue not found");
+
+		const job = await queue.add(data, {
+			attempts: 3,
+			backoff: {
+				type: "exponential",
+				delay: 2000,
+			},
+		});
+
+		return job;
+	}
+
+	async enqueueEmailDelivery(data: any) {
+		const queue = this.getQueue(QUEUE_NAMES.EMAIL_DELIVERY);
+		if (!queue) throw new Error("Email delivery queue not found");
+
+		const job = await queue.add(data, {
+			attempts: 3,
+			backoff: {
+				type: "exponential",
+				delay: 2000,
+			},
+		});
+
+		return job;
+	}
+
+	// Schedule recovery scan job (cron)
 	async scheduleRecoveryScan(cronExpression = "*/15 * * * *") {
 		const queue = this.queues.get(QUEUE_NAMES.RECOVERY_SCAN);
 
@@ -242,7 +242,7 @@ export class QueueManager {
 		console.log(`Recovery scan scheduled: ${cronExpression}`);
 	}
 
-    // Get queue statistics
+	// Get queue statistics
 	async getQueueStats(queueName: string) {
 		const queue = this.queues.get(queueName);
 

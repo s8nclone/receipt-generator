@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { Prisma } from "../generated/client.js"
+import dotenv from "dotenv";
+dotenv.config();
 
 
 // Global error handler

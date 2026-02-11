@@ -22,7 +22,7 @@ export const verifyCloudinaryConfig = (): boolean => {
 		return false;
 	}
 
-	console.log("✅ Cloudinary configured:", cloud_name);
+	console.log("Cloudinary configured:", cloud_name);
 	return true;
 };
 

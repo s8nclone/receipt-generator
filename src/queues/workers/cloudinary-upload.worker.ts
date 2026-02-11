@@ -4,8 +4,8 @@ import {
 	CloudinaryUploadJobData,
 	QUEUE_NAMES,
 } from "../queue-manager.js";
-import { prisma } from "../../lib/prisma.js";
-import { receiptService, storageService } from "../../services/index.js";
+import { prisma } from "@/lib/prisma.js";
+import { receiptService, storageService } from "@/services/index.js";
 
 // Cloudinary Upload Worker
 export const processCloudinaryUpload = async (
@@ -54,6 +54,10 @@ export const processCloudinaryUpload = async (
 				expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
 			},
 		});
+
+		await queueManager.enqueueEmailDelivery({ receiptId });
+
+		console.log(`Upload complete for ${receiptId}, email queued`);
 	} catch (error: any) {
 		console.error(`Cloudinary upload failed for ${receiptId}:`, error.message);
 

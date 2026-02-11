@@ -1,5 +1,7 @@
 import app from "./app.js";
-import { prisma, disconnectPrisma } from "./lib/prisma.js";
+import { disconnectPrisma } from "./lib/prisma.js";
+import dotenv from "dotenv";
+dotenv.config();
 
 const PORT = process.env.PORT ?? 3000;
 

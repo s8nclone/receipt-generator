@@ -4,8 +4,8 @@ import {
 	ReceiptGenerationJobData,
 	QUEUE_NAMES,
 } from "../queue-manager.js";
-import { prisma } from "../../lib/prisma.js";
-import { receiptService } from "../../services/index.js";
+import { prisma } from "@/lib/prisma.js";
+import { receiptService } from "@/services/index.js";
 
 // Receipt Generation Worker. Processes jobs from receipt-generation queue
 export const processReceiptGeneration = async (
@@ -17,7 +17,7 @@ export const processReceiptGeneration = async (
 	console.log(`Attempt: ${job.attemptsMade + 1}/${job.opts.attempts}`);
 
 	if (isRecovery) {
-		console.log(`Recovery job`);
+		console.log("Recovery job");
 	}
 
 	try {
@@ -126,5 +126,5 @@ export const startReceiptGenerationWorker = () => {
 		console.warn(`Job ${job.id} stalled`);
 	});
 
-	console.log(`Receipt generation worker started (concurrency: 2)`);
+	console.log("Receipt generation worker started (concurrency: 2)");
 }

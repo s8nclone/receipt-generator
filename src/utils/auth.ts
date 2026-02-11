@@ -1,6 +1,8 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { UserRole } from "@/generated/enums.js";
+import dotenv from "dotenv";
+dotenv.config();
 
 // JWT Payload interface
 export interface JWTPayload {

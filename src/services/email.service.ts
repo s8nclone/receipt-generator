@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma.js";
 import { EmailStatus } from "@/generated/enums.js";
 import { promises as fs } from "fs";
 import { emailTemplates } from "@/utils/email-template-engine.js";
+import dotenv from "dotenv";
+dotenv.config();
 
 export class EmailService {
 	constructor(
@@ -9,9 +11,7 @@ export class EmailService {
 		private logger: any,
 	) {}
 
-	/**
-	 * Send receipt email
-	 */
+	// Send receipt email
 	async sendReceiptEmail(receiptId: string) {
 		const receipt = await prisma.receipt.findUnique({
 			where: { id: receiptId },

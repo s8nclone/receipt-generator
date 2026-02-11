@@ -25,7 +25,7 @@ export const processEmailDelivery = async (
 		await job.progress(80);
 
 		if (result.alreadySent) {
-			console.log(`ℹEmail already sent for ${receiptId}`);
+			console.log(`Email already sent for ${receiptId}`);
 		} else {
 			console.log(`Email sent for ${receiptId}: ${result.messageId}`);
 		}
@@ -54,6 +54,8 @@ export const processEmailDelivery = async (
 				expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
 			},
 		});
+
+		console.log(`Receipt ${receiptId} has been fully completed`);
 	} catch (error: any) {
 		console.error(`Email delivery failed for ${receiptId}:`, error.message);
 

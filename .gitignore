@@ -8,3 +8,4 @@ src/generated
 prisma/seed.ts
 scripts
 prisma/migrations
+uploads

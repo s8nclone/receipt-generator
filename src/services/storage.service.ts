@@ -8,9 +8,7 @@ export class StorageService {
 		private logger: any,
 	) {}
 
-	/**
-	 * Upload PDF to Cloudinary
-	 */
+	// Upload PDF to Cloudinary
 	async uploadReceipt(receiptId: string) {
 		const receipt = await prisma.receipt.findUnique({
 			where: { id: receiptId },
@@ -142,9 +140,7 @@ export class StorageService {
 		}
 	}
 
-	/**
-	 * Regenerate signed URL for receipt
-	 */
+	// Regenerate signed URL for receipt
 	async regenerateSignedURL(receiptId: string): Promise<string> {
 		const receipt = await prisma.receipt.findUnique({
 			where: { id: receiptId },
